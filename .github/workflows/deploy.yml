@@ -1,0 +1,33 @@
+name: Deploy
+
+# Fires only after the CI workflow completes successfully on the main branch.
+# Using workflow_run instead of "needs" across files so CI must pass first.
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    # Only deploy when CI passed (not on failure or cancellation).
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          # Each command on its own line so a failure stops the script immediately.
+          script: |
+            set -e
+            cd ~/telegram-calendar-bot
+            git pull origin main
+            docker compose -f deploy/docker-compose.yml build app
+            docker compose -f deploy/docker-compose.yml up -d app
+            docker compose -f deploy/docker-compose.yml exec -T app alembic upgrade head
+            echo "Deploy complete."

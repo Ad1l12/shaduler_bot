@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(/c/Users/abylkakimov/AppData/Local/anaconda3/python.exe -m venv .venv)"
+    ]
+  }
+}
